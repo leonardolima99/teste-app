@@ -50,7 +50,7 @@ jobs:
             APP_ID=$(aws amplify create-app \
               --name "$APP_NAME" \
               --repository "$REPOSITORY" \
-              --oauth-token ${{ secrets.GITHUB_TOKEN }} \
+              --oauth-token ${{ secrets.GB_TOKEN }} \
               --environment-variables ENV=production \
               --query "app.appId" --output text)
 
