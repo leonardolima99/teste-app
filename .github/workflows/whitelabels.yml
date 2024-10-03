@@ -1,9 +1,9 @@
-name: Deploy to multiple Amplify apps
+name: Create and Deploy to multiple Amplify apps
 
 on:
   push:
     branches:
-      - main # Acionado sempre que houver um push na branch main
+      - main # Aciona o workflow ao dar push na branch main
 
 jobs:
   deploy_amplify:
@@ -31,19 +31,42 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Deploy app to AWS Amplify
-        run: |
-          # Obter o ID do app pelo nome
-          APP_ID=$(aws amplify list-apps --query "apps[?name=='${{ matrix.app_name }}'].appId" --output text)
+      - name: Install Amplify CLI
+        run: npm install -g @aws-amplify/cli
 
-          # Verificar se o app existe
+      - name: Create or Update Amplify App
+        run: |
+          BRANCH_NAME=${{ matrix.branch_name }}
+          APP_NAME=${{ matrix.app_name }}
+          REPOSITORY="https://github.com/leonardolima99/teste-app/"  # Substitua pelo seu repositório
+
+          # Verificar se o app já existe
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='$APP_NAME'].appId" --output text)
+
           if [[ -z "$APP_ID" ]]; then
-            echo "Error: App ${{ matrix.app_name }} not found!"
-            exit 1
+            # Se o app não existir, cria um novo no Amplify
+            echo "App $APP_NAME not found. Creating new app in Amplify."
+
+            APP_ID=$(aws amplify create-app \
+              --name "$APP_NAME" \
+              --repository "$REPOSITORY" \
+              --oauth-token ${{ secrets.GITHUB_TOKEN }} \
+              --environment-variables ENV=production \
+              --query "app.appId" --output text)
+
+            # Criar o branch main no novo app
+            aws amplify create-branch \
+              --app-id $APP_ID \
+              --branch-name $BRANCH_NAME \
+              --enable-auto-build
+
+            echo "App $APP_NAME created with ID $APP_ID."
+          else
+            echo "App $APP_NAME already exists with ID $APP_ID."
           fi
 
-          # Atualizar o branch main no Amplify para esse app
+          # Iniciar o deploy na branch main
           aws amplify start-job \
             --app-id $APP_ID \
-            --branch-name ${{ matrix.branch_name }} \
+            --branch-name $BRANCH_NAME \
             --job-type RELEASE
