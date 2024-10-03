@@ -1,0 +1,49 @@
+name: Deploy to multiple Amplify apps
+
+on:
+  push:
+    branches:
+      - main # Acionado sempre que houver um push na branch main
+
+jobs:
+  deploy_amplify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app_name: [
+            "client1-app",
+            "client2-app",
+            "client3-app",
+            "client4-app",
+            "client5-app",
+            "client6-app",
+          ] # Substitua pelos nomes dos apps de seus clientes
+        branch_name: ["main"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy app to AWS Amplify
+        run: |
+          # Obter o ID do app pelo nome
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='${{ matrix.app_name }}'].appId" --output text)
+
+          # Verificar se o app existe
+          if [[ -z "$APP_ID" ]]; then
+            echo "Error: App ${{ matrix.app_name }} not found!"
+            exit 1
+          fi
+
+          # Atualizar o branch main no Amplify para esse app
+          aws amplify start-job \
+            --app-id $APP_ID \
+            --branch-name ${{ matrix.branch_name }} \
+            --job-type RELEASE
