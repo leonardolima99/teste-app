@@ -11,7 +11,7 @@
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="Hue hue BR BR" />
+  <HelloWorld msg="Hue hue BR BR 2" />
 </template>
 
 <style scoped>
