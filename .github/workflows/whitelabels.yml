@@ -1,72 +1,71 @@
-# name: Create and Deploy to multiple Amplify apps
+name: Create and Deploy to multiple Amplify apps
 
-# on:
-#   push:
-#     branches:
-#       - main # Aciona o workflow ao dar push na branch main
+on:
+  push:
+    branches:
+      - main # Aciona o workflow ao dar push na branch main
 
-# jobs:
-#   deploy_amplify:
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         app_name: [
-#             "client1-app",
-#             "client2-app",
-#             "client3-app",
-#             "client4-app",
-#             "client5-app",
-#             "client6-app",
-#           ] # Substitua pelos nomes dos apps de seus clientes
-#         branch_name: ["main"]
+jobs:
+  deploy_amplify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app_name: [
+            "client1-app",
+            "client3-app",
+            "client4-app",
+            "client6-app",
+            "app-tarciso",
+          ] # Substitua pelos nomes dos apps de seus clientes
+        branch_name: ["main"]
 
-#     steps:
-#       - name: Check out repository
-#         uses: actions/checkout@v3
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-#       - name: Set up AWS CLI
-#         uses: aws-actions/configure-aws-credentials@v2
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: us-east-1
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-#       - name: Install Amplify CLI
-#         run: npm install -g @aws-amplify/cli
+      - name: Install Amplify CLI
+        run: npm install -g @aws-amplify/cli
 
-#       - name: Create or Update Amplify App
-#         run: |
-#           BRANCH_NAME=${{ matrix.branch_name }}
-#           APP_NAME=${{ matrix.app_name }}
-#           REPOSITORY="https://github.com/leonardolima99/teste-app/"  # Substitua pelo seu repositório
+      - name: Create or Update Amplify App
+        run: |
+          BRANCH_NAME=${{ matrix.branch_name }}
+          APP_NAME=${{ matrix.app_name }}
+          REPOSITORY="https://github.com/leonardolima99/teste-app/"  # Substitua pelo seu repositório
 
-#           # Verificar se o app já existe
-#           APP_ID=$(aws amplify list-apps --query "apps[?name=='$APP_NAME'].appId" --output text)
+          # Verificar se o app já existe
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='$APP_NAME'].appId" --output text)
 
-#           if [[ -z "$APP_ID" ]]; then
-#             # Se o app não existir, cria um novo no Amplify
-#             echo "App $APP_NAME not found. Creating new app in Amplify."
+          if [[ -z "$APP_ID" ]]; then
+            # Se o app não existir, cria um novo no Amplify
+            echo "App $APP_NAME not found. Creating new app in Amplify."
 
-#             APP_ID=$(aws amplify create-app \
-#               --name "$APP_NAME" \
-#               --repository "$REPOSITORY" \
-#               --oauth-token ${{ secrets.GB_TOKEN }} \
-#               --environment-variables ENV=production \
-#               --query "app.appId" --output text)
+            APP_ID=$(aws amplify create-app \
+              --name "$APP_NAME" \
+              --repository "$REPOSITORY" \
+              --oauth-token ${{ secrets.GB_TOKEN }} \
+              --environment-variables ENV=production \
+              --query "app.appId" --output text)
 
-#             # Criar o branch main no novo app
-#             aws amplify create-branch \
-#               --app-id $APP_ID \
-#               --branch-name $BRANCH_NAME \
-#               --enable-auto-build
+            # Criar o branch main no novo app
+            aws amplify create-branch \
+              --app-id $APP_ID \
+              --branch-name $BRANCH_NAME \
+              --enable-auto-build
 
-#             echo "App $APP_NAME created with ID $APP_ID."
-#           else
-#             echo "App $APP_NAME already exists with ID $APP_ID."
-#           fi
+            echo "App $APP_NAME created with ID $APP_ID."
+          else
+            echo "App $APP_NAME already exists with ID $APP_ID."
+          fi
 
-#           # Iniciar o deploy na branch main
-#           aws amplify start-job \
-#             --app-id $APP_ID \
-#             --branch-name $BRANCH_NAME \
-#             --job-type RELEASE
+          # # Iniciar o deploy na branch main
+          # aws amplify start-job \
+          #   --app-id $APP_ID \
+          #   --branch-name $BRANCH_NAME \
+          #   --job-type RELEASE
